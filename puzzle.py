@@ -65,7 +65,9 @@ class ImagePuzzle:
         self.time = time
         self.image_path = image_path
         self.fullscreen = False
+        self.paused = True
         self.image_index = 0
+        self.rectangle_index = 0
 
         # Load images
         self.images = self.get_images()
@@ -85,21 +87,30 @@ class ImagePuzzle:
                         state=tk.NORMAL,
                     )
                 )
+        np.random.shuffle(self.rectangles)
         self.canvas.pack(fill=tk.BOTH, expand=1)
 
         # Key Bindings
         self.tk.bind("<F11>", self.toggle_fullscreen)
         self.tk.bind("<F5>", self.toggle_fullscreen)
         self.tk.bind("<Escape>", self.end_fullscreen)
-        self.tk.bind("<Button-1>", self.start_puzzle)
+        self.tk.bind("<Button-1>", self.toggle_paused)
+        self.tk.bind("<Right>", self.next_image)
 
-    def start_puzzle(self, event=None):
-        np.random.shuffle(self.rectangles)
-        for i, rectangle in enumerate(self.rectangles):
-            self.canvas.itemconfig(rectangle, state=tk.HIDDEN)
+    def toggle_paused(self, event=None):
+        self.paused = not self.paused
+        if not self.paused:
+            self.remove_tile()
+
+    def remove_tile(self, event=None):
+        if not self.paused and self.rectangle_index < len(self.rectangles):
+            self.canvas.itemconfig(self.rectangles[self.rectangle_index],
+                                   state=tk.HIDDEN)
             sleep(self.time)
             self.tk.update()
-            print(i, rectangle)
+            self.rectangle_index += 1
+        if self.rectangle_index < len(self.rectangles):
+            self.tk.after(int(self.time*1000), self.remove_tile)
 
     def toggle_fullscreen(self, event=None):
         self.fullscreen = not self.fullscreen
@@ -110,6 +121,12 @@ class ImagePuzzle:
         self.tk.attributes("-fullscreen", False)
 
     def next_image(self, event=None):
+        np.random.shuffle(self.rectangles)
+        self.rectangle_index = 0
+        self.paused = True
+        for rectangle in self.rectangles:
+            self.canvas.itemconfig(rectangle, state=tk.NORMAL)
+        self.tk.update()
         self.image_index = (self.image_index + 1) % len(self.images)
         self.image.paste(Image.open(self.images[self.image_index]))
 
