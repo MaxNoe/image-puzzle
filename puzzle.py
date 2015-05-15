@@ -35,6 +35,7 @@ class ImagePuzzle:
                  n_tiles_x=16,
                  n_tiles_y=9,
                  time=0.3,
+                 dualmonitor=False,
                  ):
 
         self.tk = tk.Tk()
@@ -42,14 +43,16 @@ class ImagePuzzle:
         self.tk.attributes('-zoomed', True)
 
         # if dualmonitor on linux:
-        xrandr_output = sp.check_output("xrandr | grep \* | cut -d' ' -f4", shell=True)
-        xrandr_output = xrandr_output.splitlines()[0].decode('UTF-8')
+        if dualmonitor:
+            xrandr_output = sp.check_output("xrandr | grep \* | cut -d' ' -f4",
+                                            shell=True)
+            xrandr_output = xrandr_output.splitlines()[0].decode('UTF-8')
 
-        self.width = int(xrandr_output.split("x")[0])
-        self.height = int(xrandr_output.split("x")[1])
-
-        # self.width = self.tk.winfo_screenwidth()
-        # self.height = self.tk.winfo_screenheight()
+            self.width = int(xrandr_output.split("x")[0])
+            self.height = int(xrandr_output.split("x")[1])
+        else:
+            self.width = self.tk.winfo_screenwidth()
+            self.height = self.tk.winfo_screenheight()
 
         self.canvas = tk.Canvas(self.tk, width=self.width, height=self.height)
         # borderless
