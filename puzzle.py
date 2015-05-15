@@ -4,6 +4,13 @@ hidden under some rectangles which are then removed one after another
 
 Usage:
     puzzle <imagepath> [options]
+
+Options:
+    -t <seconds>, --time=<seconds>  time between removal of tiles [default: 0.3]
+    -x <N>, --n_tiles_x=<N>         number of tiles in x direction [default: 16]
+    -y <N>, --n_tiles_y=<N>         number of tiles in y direction [default: 9]
+    --dualmonitor                   Use xrandr tou get correct monitor resolution
+                                    in a dualmonitor setup
 """
 import sys
 import os
@@ -23,7 +30,13 @@ from time import sleep
 from docopt import docopt
 
 class ImagePuzzle:
-    def __init__(self, image_path, n_boxes_x=16, n_boxes_y=9, time=0.25):
+    def __init__(self,
+                 image_path,
+                 n_tiles_x=16,
+                 n_tiles_y=9,
+                 time=0.3,
+                 ):
+
         self.tk = tk.Tk()
         self.tk.title('Image Puzzle')
         self.tk.attributes('-zoomed', True)
@@ -42,8 +55,8 @@ class ImagePuzzle:
         # borderless
         self.canvas.config(highlightthickness=0)
 
-        self.xedges = np.linspace(0, self.width, n_boxes_x + 1)
-        self.yedges = np.linspace(0, self.height, n_boxes_y + 1)
+        self.xedges = np.linspace(0, self.width, n_tiles_x + 1)
+        self.yedges = np.linspace(0, self.height, n_tiles_y + 1)
 
 
         self.time = time
@@ -103,9 +116,20 @@ class ImagePuzzle:
             for f in files:
                 if f.split('.')[-1].lower() in ('jpg', 'png', 'jpeg'):
                     images.append(path.join(root, f))
-        return images
+        return sorted(images)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    w = ImagePuzzle(args['<imagepath>'])
+
+    time = float(args['--time'])
+    n_tiles_x = int(args['--n_tiles_x'])
+    n_tiles_y = int(args['--n_tiles_y'])
+
+    w = ImagePuzzle(
+        args['<imagepath>'],
+        time=time,
+        n_tiles_x=n_tiles_x,
+        n_tiles_y=n_tiles_y,
+        dualmonitor=args['--dualmonitor']
+    )
     w.tk.mainloop()
