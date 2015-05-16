@@ -75,7 +75,9 @@ class ImagePuzzle:
         self.images = self.get_images()
 
         # instantiate image
-        self.image = ImageTk.PhotoImage(image=Image.open(self.images[0]))
+        image = Image.open(self.images[0])
+        image = self.resize_keep_aspect(image)
+        self.image = ImageTk.PhotoImage(image=image)
         self.canvas.create_image([0, 0], anchor=tk.NW, image=self.image)
 
         self.rectangles = []
@@ -144,7 +146,17 @@ class ImagePuzzle:
             self.canvas.itemconfig(rectangle, state=tk.NORMAL)
         self.tk.update()
         self.image_index = (self.image_index + 1) % len(self.images)
-        self.image.paste(Image.open(self.images[self.image_index]))
+        image = Image.open(self.images[self.image_index])
+        image = self.resize_keep_aspect(image)
+        self.image.paste(image)
+        self.tk.bind("<Button-1>", self.toggle_paused)
+
+    def resize_keep_aspect(self, image):
+        width, height = image.size
+        ratio = min(self.width / width, self.height / height)
+        image = image.resize((int(width * ratio), int(height * ratio)),
+                             Image.BICUBIC)
+        return image
 
     def get_images(self):
         images = []
