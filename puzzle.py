@@ -22,8 +22,10 @@ from random import shuffle
 
 if sys.version_info[0] == 2:
     import Tkinter as tk
+    import tkMessageBox as tkmbox
 else:
     import tkinter as tk
+    from tkinter import messagebox as tkmbox
 
 from PIL import ImageTk, Image
 
@@ -136,6 +138,11 @@ class ImagePuzzle:
             for f in files:
                 if f.split('.')[-1].lower() in ('jpg', 'png', 'jpeg'):
                     images.append(path.join(root, f))
+        if not images:
+            message = 'No images found in "{}"'.format(self.image_path)
+            tkmbox.showerror('No images found', message)
+            raise IOError(message)
+
         return sorted(images)
 
 if __name__ == '__main__':
