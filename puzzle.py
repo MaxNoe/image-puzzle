@@ -120,12 +120,21 @@ class ImagePuzzle:
 
 
     def toggle_fullscreen(self, event=None):
-        self.fullscreen = not self.fullscreen
-        self.tk.attributes("-fullscreen", self.fullscreen)
+        if self.fullscreen:
+            self.end_fullscreen()
+        else:
+            self.start_fullscreen()
+
+
+    def start_fullscreen(self, event=None):
+        self.tk.config(cursor="none")
+        self.tk.attributes("-fullscreen", True)
+        self.fullscreen = True
 
     def end_fullscreen(self, event=None):
-        self.fullscreen = False
+        self.tk.config(cursor="arrow")
         self.tk.attributes("-fullscreen", False)
+        self.fullscreen = False
 
     def next_image(self, event=None):
         shuffle(self.rectangles)
