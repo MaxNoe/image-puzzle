@@ -105,14 +105,19 @@ class ImagePuzzle:
             self.remove_tile()
 
     def remove_tile(self, event=None):
-        if not self.paused and self.rectangle_index < len(self.rectangles):
-            self.canvas.itemconfig(self.rectangles[self.rectangle_index],
-                                   state=tk.HIDDEN)
-            sleep(self.time)
-            self.tk.update()
-            self.rectangle_index += 1
-        if self.rectangle_index < len(self.rectangles):
-            self.tk.after(int(self.time*1000), self.remove_tile)
+        if not self.paused:
+            if self.rectangle_index < len(self.rectangles):
+                self.canvas.itemconfig(
+                    self.rectangles[self.rectangle_index],
+                    state=tk.HIDDEN,
+                )
+                sleep(self.time)
+                self.tk.update()
+                self.rectangle_index += 1
+                self.tk.after(int(self.time*1000), self.remove_tile)
+            else:
+                self.tk.bind("<Button-1>", self.next_image)
+
 
     def toggle_fullscreen(self, event=None):
         self.fullscreen = not self.fullscreen
