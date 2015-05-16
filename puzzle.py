@@ -25,8 +25,6 @@ else:
 from PIL import ImageTk, Image
 
 from time import sleep
-from docopt import docopt
-
 
 def makeentry(parent, caption, width=None, default=None, **options):
     ttk.Label(parent, text=caption).pack(side=tk.LEFT, padx=1)
@@ -140,7 +138,6 @@ class ImagePuzzle:
 
         self.tk = tk.Tk()
         self.tk.title('Image Puzzle')
-        self.tk.attributes('-zoomed', True)
 
         if not path.exists(self.image_path):
             message='"{}" is not a proper directory'.format(self.image_path)
