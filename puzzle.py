@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 A small python script for an image puzzle, the images are
 hidden under some rectangles which are then removed one after another
