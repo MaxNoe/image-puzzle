@@ -1,18 +1,9 @@
 #!/usr/bin/env python
 """
 A small python script for an image puzzle, the images are
-hidden under some rectangles which are then removed one after another
-
-Usage:
-    puzzle [options]
-
-Options:
-    -t <seconds>, --time=<seconds>  time between removal of tiles [default: 0.3]
-    -x <N>, --n_tiles_x=<N>         number of tiles in x direction [default: 16]
-    -y <N>, --n_tiles_y=<N>         number of tiles in y direction [default: 9]
-    --dualmonitor                   Use xrandr tou get correct monitor resolution
-                                    in a dualmonitor setup
+hidden under tiles which are then removed one after another
 """
+
 import sys
 import os
 from os import path
@@ -23,41 +14,139 @@ from random import shuffle
 if sys.version_info[0] == 2:
     import Tkinter as tk
     import tkMessageBox as mbox
+    import tkFont as font
 else:
     import tkinter as tk
     from tkinter import messagebox as mbox
     from tkinter import filedialog as fdiag
+    from tkinter import font
+    from tkinter import ttk
 
 from PIL import ImageTk, Image
 
 from time import sleep
 from docopt import docopt
 
+
+def makeentry(parent, caption, width=None, default=None, **options):
+    ttk.Label(parent, text=caption).pack(side=tk.LEFT, padx=1)
+    var = tk.StringVar(value=default)
+    entry = ttk.Entry(parent, textvariable=var, **options)
+    if width:
+        entry.config(width=width)
+    entry.pack(side=tk.LEFT, padx=1)
+    return entry, var
+
+class OptionsWindow:
+    def __init__(self):
+        self.tk = tk.Tk()
+        self.tk.title('Options')
+
+        frame1 = ttk.Frame(self.tk)
+        frame1.pack(side=tk.TOP, padx=2, pady=2)
+
+        button_frame = ttk.Frame(self.tk)
+        button_frame.pack(side=tk.BOTTOM, padx=2, pady=2)
+
+        self.xtiles_box, self.xtiles = makeentry(
+            frame1, caption='Number of Tiles  X:', width=3, default=16,
+            justify=tk.RIGHT,
+        )
+        self.ytiles_box, self.ytiles = makeentry(
+            frame1, caption=' Y:', width=3, default=9, justify=tk.RIGHT,
+        )
+
+        frame2 = ttk.Frame(self.tk)
+        frame2.pack(side=tk.TOP, padx=2, pady=2)
+        self.time_box, self.time = makeentry(
+            frame2, caption='removal interval / seconds', default=0.2, width=4,
+            justify=tk.RIGHT,
+        )
+
+        frame3 = ttk.Frame(self.tk)
+        frame3.pack(side=tk.TOP, padx=2, pady=2)
+        self.image_path_box, self.image_path = makeentry(
+            frame3, caption='Image Directory', default=os.getcwd(),
+        )
+        self.browse_button = ttk.Button(
+            frame3, text='Browse ...', command=self.set_image_path,
+        )
+        self.browse_button.pack(side=tk.BOTTOM)
+
+        frame4 = ttk.Frame(self.tk)
+        frame4.pack(side=tk.TOP, padx=2, pady=2)
+        self.color_cycle_box, self.color_cycle = makeentry(
+            frame4, caption='color cycle, names or hexcodes', default='black,red'
+        )
+
+        frame5 = ttk.Frame(self.tk)
+        frame5.pack(side=tk.TOP, padx=2, pady=2)
+        self.dualmonitor = tk.BooleanVar(value=False)
+        self.dualmonitor_box = ttk.Checkbutton(
+            frame5, text='dualmonitor (linux only)', variable=self.dualmonitor,
+        )
+        self.dualmonitor_box.pack(side=tk.LEFT)
+
+
+        self.ok_button = ttk.Button(button_frame, text='Ok',
+                                    command=self.save_close)
+        self.ok_button.pack(side=tk.LEFT)
+        self.cancel_button = ttk.Button(
+            button_frame, text='Cancel', command=self.close,
+        )
+        self.cancel_button.pack(side=tk.LEFT)
+        self.tk.mainloop()
+
+    def set_image_path(self):
+        image_path = fdiag.askdirectory(
+            mustexist=True,
+            title='Choose your Image Directory'
+        )
+        if image_path:
+            self.image_path.set(image_path)
+
+    def save_close(self):
+        settings = {}
+        settings['n_tiles_x'] = int(self.xtiles.get())
+        settings['n_tiles_y'] = int(self.ytiles.get())
+        settings['time'] = float(self.time.get())
+        settings['image_path'] = self.image_path.get()
+        settings['dualmonitor'] = self.dualmonitor.get()
+        settings['colorcycle'] =self.color_cycle.get().split(',')
+
+        self.settings = settings
+        self.tk.destroy()
+
+    def close(self):
+        self.tk.destroy()
+        sys.exit()
+
+
 class ImagePuzzle:
     def __init__(self,
                  n_tiles_x=16,
                  n_tiles_y=9,
-                 time=0.3,
+                 time=0.2,
+                 colorcycle=['black', 'red'],
+                 image_path='.',
                  dualmonitor=False,
-                 colorcycle=['black'],
                  ):
-
+        tiles_x = n_tiles_x
+        tiles_y = n_tiles_y
+        self.time = time
+        colorcycle = colorcycle
+        self.image_path = image_path
+        dualmonitor = dualmonitor
 
         self.tk = tk.Tk()
         self.tk.title('Image Puzzle')
         self.tk.attributes('-zoomed', True)
 
-        self.image_path = fdiag.askdirectory(
-            mustexist=True,
-            title='Choose your Image Directory'
-        )
-        if not self.image_path:
+        if not path.exists(self.image_path):
             message='"{}" is not a proper directory'.format(self.image_path)
             mbox.showerror(title='Input Error', message=message)
             raise IOError(message)
 
-
-        # if dualmonitor on linux:
         if dualmonitor:
             xrandr_output = sp.check_output("xrandr | grep \* | cut -d' ' -f4",
                                             shell=True)
@@ -73,11 +162,9 @@ class ImagePuzzle:
         # borderless
         self.canvas.config(highlightthickness=0)
 
-        self.xedges = [int(i * self.width / n_tiles_x) for i in range(n_tiles_x+1)]
-        self.yedges = [int(i * self.height / n_tiles_y) for i in range(n_tiles_y+1)]
+        xedges = [int(i * self.width / tiles_x) for i in range(tiles_x + 1)]
+        yedges = [int(i * self.height / tiles_y) for i in range(tiles_y + 1)]
 
-        self.colorcycle = colorcycle
-        self.time = time
         self.blackscreen = Image.new(mode='RGB', size=(1920, 1080), color='black')
         self.fullscreen = False
         self.paused = True
@@ -90,15 +177,18 @@ class ImagePuzzle:
         # instantiate image
         image = Image.open(self.images[0])
         image = self.resize_keep_aspect(image)
-        self.image = ImageTk.PhotoImage(image=self.blackscreen)
-        self.canvas.create_image([self.width//2, self.height//2], image=self.image)
+        self.image = ImageTk.PhotoImage(master=self.canvas,
+                                        image=self.blackscreen)
+        self.canvas.create_image([self.width//2, self.height//2],
+                                 image=self.image,
+                                 )
         self.image.paste(image)
 
         # setup the tiles
         self.rectangles = []
         i = 0
-        for x1, x2 in zip(self.xedges[:-1], self.xedges[1:]):
-            for y1, y2 in zip(self.yedges[:-1], self.yedges[1:]):
+        for x1, x2 in zip(xedges[:-1], xedges[1:]):
+            for y1, y2 in zip(yedges[:-1], yedges[1:]):
                 color = colorcycle[i % len(colorcycle)]
                 i += 1
                 self.rectangles.append(
@@ -199,17 +289,8 @@ class ImagePuzzle:
         return sorted(images)
 
 if __name__ == '__main__':
-    args = docopt(__doc__)
+    o = OptionsWindow()
+    settings = o.settings
 
-    time = float(args['--time'])
-    n_tiles_x = int(args['--n_tiles_x'])
-    n_tiles_y = int(args['--n_tiles_y'])
-
-    w = ImagePuzzle(
-        time=time,
-        n_tiles_x=n_tiles_x,
-        n_tiles_y=n_tiles_y,
-        dualmonitor=args['--dualmonitor'],
-        colorcycle=['black', '#FF6600',],
-    )
+    w = ImagePuzzle(**settings)
     w.tk.mainloop()
