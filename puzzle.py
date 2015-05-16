@@ -39,6 +39,7 @@ class ImagePuzzle:
                  n_tiles_y=9,
                  time=0.3,
                  dualmonitor=False,
+                 colorcycle=['black'],
                  ):
 
         self.tk = tk.Tk()
@@ -64,6 +65,7 @@ class ImagePuzzle:
         self.xedges = [int(i * self.width / n_tiles_x) for i in range(n_tiles_x+1)]
         self.yedges = [int(i * self.height / n_tiles_y) for i in range(n_tiles_y+1)]
 
+        self.colorcycle = colorcycle
         self.time = time
         self.image_path = image_path
         self.fullscreen = False
@@ -80,15 +82,19 @@ class ImagePuzzle:
         self.image = ImageTk.PhotoImage(image=image)
         self.canvas.create_image([0, 0], anchor=tk.NW, image=self.image)
 
+        # setup the tiles
         self.rectangles = []
-
+        i = 0
         for x1, x2 in zip(self.xedges[:-1], self.xedges[1:]):
             for y1, y2 in zip(self.yedges[:-1], self.yedges[1:]):
+                color = colorcycle[i % len(colorcycle)]
+                i += 1
                 self.rectangles.append(
                     self.canvas.create_rectangle(
                         x1, y1, x2, y2,
-                        fill='black',
                         state=tk.NORMAL,
+                        fill=color,
+                        outline='',
                     )
                 )
         shuffle(self.rectangles)
@@ -120,13 +126,11 @@ class ImagePuzzle:
             else:
                 self.tk.bind("<Button-1>", self.next_image)
 
-
     def toggle_fullscreen(self, event=None):
         if self.fullscreen:
             self.end_fullscreen()
         else:
             self.start_fullscreen()
-
 
     def start_fullscreen(self, event=None):
         self.tk.config(cursor="none")
@@ -139,8 +143,8 @@ class ImagePuzzle:
         self.fullscreen = False
 
     def next_image(self, event=None):
-        shuffle(self.rectangles)
         self.rectangle_index = 0
+        shuffle(self.rectangles)
         self.paused = True
         for rectangle in self.rectangles:
             self.canvas.itemconfig(rectangle, state=tk.NORMAL)
@@ -183,6 +187,7 @@ if __name__ == '__main__':
         time=time,
         n_tiles_x=n_tiles_x,
         n_tiles_y=n_tiles_y,
-        dualmonitor=args['--dualmonitor']
+        dualmonitor=args['--dualmonitor'],
+        colorcycle=['black', '#FF6600',],
     )
     w.tk.mainloop()
