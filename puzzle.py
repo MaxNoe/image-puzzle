@@ -67,6 +67,7 @@ class ImagePuzzle:
 
         self.colorcycle = colorcycle
         self.time = time
+        self.blackscreen = Image.new(mode='RGB', size=(1920, 1080), color='black')
         self.image_path = image_path
         self.fullscreen = False
         self.paused = True
@@ -79,8 +80,9 @@ class ImagePuzzle:
         # instantiate image
         image = Image.open(self.images[0])
         image = self.resize_keep_aspect(image)
-        self.image = ImageTk.PhotoImage(image=image)
-        self.canvas.create_image([0, 0], anchor=tk.NW, image=self.image)
+        self.image = ImageTk.PhotoImage(self.blackscreen)
+        self.canvas.create_image([self.width//2, self.height//2], image=self.image)
+        self.image.paste(image)
 
         # setup the tiles
         self.rectangles = []
@@ -160,7 +162,18 @@ class ImagePuzzle:
         ratio = min(self.width / width, self.height / height)
         image = image.resize((int(width * ratio), int(height * ratio)),
                              Image.BICUBIC)
-        return image
+        width, height = image.size
+        box=[int(round((self.width - width)/2, 0)),
+             int(round((self.height - height)/2, 0)),
+             ]
+        box.append(box[0]+width)
+        box.append(box[1]+height)
+        centered_image = self.blackscreen.copy()
+        centered_image.paste(
+            image,
+            box=box,
+            )
+        return centered_image
 
     def get_images(self):
         images = []
