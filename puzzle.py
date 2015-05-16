@@ -17,7 +17,7 @@ import os
 from os import path
 import subprocess as sp
 
-import numpy as np
+from random import shuffle
 
 if sys.version_info[0] == 2:
     import Tkinter as tk
@@ -58,9 +58,8 @@ class ImagePuzzle:
         # borderless
         self.canvas.config(highlightthickness=0)
 
-        self.xedges = np.linspace(0, self.width, n_tiles_x + 1)
-        self.yedges = np.linspace(0, self.height, n_tiles_y + 1)
-
+        self.xedges = [int(i * self.width / n_tiles_x) for i in range(n_tiles_x+1)]
+        self.yedges = [int(i * self.height / n_tiles_y) for i in range(n_tiles_y+1)]
 
         self.time = time
         self.image_path = image_path
@@ -87,7 +86,7 @@ class ImagePuzzle:
                         state=tk.NORMAL,
                     )
                 )
-        np.random.shuffle(self.rectangles)
+        shuffle(self.rectangles)
         self.canvas.pack(fill=tk.BOTH, expand=1)
 
         # Key Bindings
@@ -121,7 +120,7 @@ class ImagePuzzle:
         self.tk.attributes("-fullscreen", False)
 
     def next_image(self, event=None):
-        np.random.shuffle(self.rectangles)
+        shuffle(self.rectangles)
         self.rectangle_index = 0
         self.paused = True
         for rectangle in self.rectangles:
