@@ -4,7 +4,7 @@ A small python script for an image puzzle, the images are
 hidden under some rectangles which are then removed one after another
 
 Usage:
-    puzzle <imagepath> [options]
+    puzzle [options]
 
 Options:
     -t <seconds>, --time=<seconds>  time between removal of tiles [default: 0.3]
@@ -22,10 +22,11 @@ from random import shuffle
 
 if sys.version_info[0] == 2:
     import Tkinter as tk
-    import tkMessageBox as tkmbox
+    import tkMessageBox as mbox
 else:
     import tkinter as tk
-    from tkinter import messagebox as tkmbox
+    from tkinter import messagebox as mbox
+    from tkinter import filedialog as fdiag
 
 from PIL import ImageTk, Image
 
@@ -34,7 +35,6 @@ from docopt import docopt
 
 class ImagePuzzle:
     def __init__(self,
-                 image_path,
                  n_tiles_x=16,
                  n_tiles_y=9,
                  time=0.3,
@@ -42,9 +42,20 @@ class ImagePuzzle:
                  colorcycle=['black'],
                  ):
 
+
         self.tk = tk.Tk()
         self.tk.title('Image Puzzle')
         self.tk.attributes('-zoomed', True)
+
+        self.image_path = fdiag.askdirectory(
+            mustexist=True,
+            title='Choose your Image Directory'
+        )
+        if not self.image_path:
+            message='"{}" is not a proper directory'.format(self.image_path)
+            mbox.showerror(title='Input Error', message=message)
+            raise IOError(message)
+
 
         # if dualmonitor on linux:
         if dualmonitor:
@@ -68,7 +79,6 @@ class ImagePuzzle:
         self.colorcycle = colorcycle
         self.time = time
         self.blackscreen = Image.new(mode='RGB', size=(1920, 1080), color='black')
-        self.image_path = image_path
         self.fullscreen = False
         self.paused = True
         self.image_index = 0
@@ -80,7 +90,7 @@ class ImagePuzzle:
         # instantiate image
         image = Image.open(self.images[0])
         image = self.resize_keep_aspect(image)
-        self.image = ImageTk.PhotoImage(self.blackscreen)
+        self.image = ImageTk.PhotoImage(image=self.blackscreen)
         self.canvas.create_image([self.width//2, self.height//2], image=self.image)
         self.image.paste(image)
 
@@ -180,10 +190,10 @@ class ImagePuzzle:
         for root, dirs, files in os.walk(self.image_path):
             for f in files:
                 if f.split('.')[-1].lower() in ('jpg', 'png', 'jpeg'):
-                    images.append(path.join(root, f))
+                    images.append(path.abspath(path.join(root, f)))
         if not images:
             message = 'No images found in "{}"'.format(self.image_path)
-            tkmbox.showerror('No images found', message)
+            mbox.showerror('No images found', message)
             raise IOError(message)
 
         return sorted(images)
@@ -196,7 +206,6 @@ if __name__ == '__main__':
     n_tiles_y = int(args['--n_tiles_y'])
 
     w = ImagePuzzle(
-        args['<imagepath>'],
         time=time,
         n_tiles_x=n_tiles_x,
         n_tiles_y=n_tiles_y,
