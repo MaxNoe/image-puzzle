@@ -27,10 +27,16 @@ A little program to show an image puzzle
 
 ## Key bindings:
 
+* `<Right>`: Main Control.
+  * Play if all tiles are still visible
+  * Remove all tiles if presentation has started
+  * Next image if all tiles are gone
+
 * Left Mouse Button: Play/Pause and next image if all tiles are removed
 
 * `<F5>` and `<F11>`: toggle fullscreen mode
 
 * `<Escape>`: Leave fullscreen mode
 
-* `<Left>`: next image
+
+* `<Left>`  Last image

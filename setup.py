@@ -20,7 +20,7 @@ puzzle = Executable(
 
 setup(
 	name = 'image-puzzle',
-	version = '0.1',
+	version = '0.2',
 	author = 'Maximilian Nöthe',
 	description = 'Image Puzzles: See your images uncoverd bit by bit',
 	executables = [puzzle, ],

@@ -204,12 +204,14 @@ class ImagePuzzle:
         self.tk.bind("<F5>", self.toggle_fullscreen)
         self.tk.bind("<Escape>", self.end_fullscreen)
         self.tk.bind("<Button-1>", self.toggle_paused)
-        self.tk.bind("<Right>", self.next_image)
+        self.tk.bind("<Right>", self.toggle_paused)
+        self.tk.bind("<Left>", self.last_image)
 
     def toggle_paused(self, event=None):
         self.paused = not self.paused
         if not self.paused:
             self.remove_tile()
+        self.tk.bind("<Right>", self.remove_all_tiles)
 
     def remove_tile(self, event=None):
         if not self.paused:
@@ -224,6 +226,13 @@ class ImagePuzzle:
                 self.tk.after(int(self.time*1000), self.remove_tile)
             else:
                 self.tk.bind("<Button-1>", self.next_image)
+
+    def remove_all_tiles(self, event=None):
+        self.paused = True
+        for rectangle in self.rectangles:
+            self.canvas.itemconfig(rectangle, state=tk.HIDDEN)
+        self.tk.update()
+        self.tk.bind('<Right>', self.next_image)
 
     def toggle_fullscreen(self, event=None):
         if self.fullscreen:
@@ -253,6 +262,21 @@ class ImagePuzzle:
         image = self.resize_keep_aspect(image)
         self.image.paste(image)
         self.tk.bind("<Button-1>", self.toggle_paused)
+        self.tk.bind("<Right>", self.toggle_paused)
+
+    def last_image(self, event=None):
+        self.rectangle_index = 0
+        shuffle(self.rectangles)
+        self.paused = True
+        for rectangle in self.rectangles:
+            self.canvas.itemconfig(rectangle, state=tk.NORMAL)
+        self.tk.update()
+        self.image_index = (len(self.images) + self.image_index - 1) % len(self.images)
+        image = Image.open(self.images[self.image_index])
+        image = self.resize_keep_aspect(image)
+        self.image.paste(image)
+        self.tk.bind("<Button-1>", self.toggle_paused)
+        self.tk.bind("<Right>", self.toggle_paused)
 
     def resize_keep_aspect(self, image):
         width, height = image.size
