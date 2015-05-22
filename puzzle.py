@@ -162,7 +162,7 @@ class ImagePuzzle:
         xedges = [int(i * self.width / tiles_x) for i in range(tiles_x + 1)]
         yedges = [int(i * self.height / tiles_y) for i in range(tiles_y + 1)]
 
-        self.blackscreen = Image.new(mode='RGB', size=(1920, 1080), color='black')
+        self.blackscreen = Image.new(mode='RGB', size=(self.width, self.height), color='black')
         self.fullscreen = False
         self.paused = True
         self.image_index = 0
